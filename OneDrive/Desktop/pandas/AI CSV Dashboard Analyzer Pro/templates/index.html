@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI CSV Dashboard Analyzer Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-title">AI CSV Dashboard Analyzer Pro</div>
+          <div class="brand-subtitle">Upload • Analyze • Visualize • Insights</div>
+        </div>
+
+        <section class="panel">
+          <h3>Upload CSV</h3>
+          <form id="uploadForm">
+            <input id="csvFile" class="file" type="file" accept=".csv" />
+            <button class="btn primary" type="submit">Upload & Analyze</button>
+          </form>
+          <div class="hint" id="uploadHint">Tip: Try a small CSV first (1–5 MB).</div>
+          <div class="status" id="statusBox"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Filters</h3>
+          <div class="row">
+            <label>Column</label>
+            <select id="filterColumn" class="input"></select>
+          </div>
+          <div class="row">
+            <label>Operator</label>
+            <select id="filterOp" class="input">
+              <option value="eq">Equals</option>
+              <option value="gt">Greater than (numeric)</option>
+              <option value="lt">Less than (numeric)</option>
+              <option value="contains">Contains (text)</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>Value</label>
+            <input id="filterValue" class="input" type="text" placeholder="e.g. 100 or USA" />
+          </div>
+          <div class="actions">
+            <button id="addFilterBtn" class="btn" type="button">Add Filter</button>
+            <button id="clearFiltersBtn" class="btn ghost" type="button">Clear</button>
+          </div>
+          <div id="filtersList" class="chips"></div>
+          <div class="actions">
+            <button id="applyFiltersBtn" class="btn primary" type="button">Apply Filters</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Cleaning</h3>
+          <label class="check">
+            <input id="removeDuplicates" type="checkbox" />
+            Remove duplicates
+          </label>
+          <label class="check">
+            <input id="removeNulls" type="checkbox" />
+            Remove rows with any nulls
+          </label>
+          <div class="row">
+            <label>Fill nulls</label>
+            <select id="fillNulls" class="input">
+              <option value="">(none)</option>
+              <option value="mean">Mean (numeric)</option>
+              <option value="median">Median (numeric)</option>
+              <option value="mode">Mode (all columns)</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button id="runCleanBtn" class="btn primary" type="button">Clean Dataset</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Export</h3>
+          <button id="downloadBtn" class="btn" type="button">Download current dataset</button>
+        </section>
+
+        <section class="panel">
+          <h3>Dashboard</h3>
+          <button id="saveDashboardBtn" class="btn" type="button">Save layout</button>
+          <button id="resetDashboardBtn" class="btn ghost" type="button">Reset layout</button>
+        </section>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="file-meta">
+            <div class="file-name" id="fileName">No file uploaded</div>
+            <div class="file-stats" id="fileStats">Upload a CSV to begin.</div>
+          </div>
+          <div class="topbar-actions">
+            <button id="refreshAnalyzeBtn" class="btn ghost" type="button">Re-run analysis</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <section class="card">
+            <div class="card-header">
+              <h2>Preview (first 10 rows)</h2>
+            </div>
+            <div class="table-wrap">
+              <table id="previewTable"></table>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <h2>AI Insights</h2>
+            </div>
+            <div class="insights">
+              <div class="insights-col">
+                <div class="pill-title">Insights</div>
+                <ul id="insightsList" class="list"></ul>
+              </div>
+              <div class="insights-col">
+                <div class="pill-title">Recommendations</div>
+                <ul id="recoList" class="list"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="card full">
+            <div class="card-header">
+              <h2>Charts</h2>
+              <div class="card-actions">
+                <button id="addChartBtn" class="btn primary" type="button">Add chart</button>
+              </div>
+            </div>
+            <div class="charts-grid" id="chartsGrid"></div>
+          </section>
+
+          <section class="card full">
+            <div class="card-header">
+              <h2>Analysis Summary</h2>
+            </div>
+            <div class="analysis" id="analysisBox"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <template id="chartCardTemplate">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <input class="chart-title input" type="text" value="Chart" />
+          <div class="chart-actions">
+            <select class="chart-type input">
+              <option value="histogram">Histogram</option>
+              <option value="bar">Bar</option>
+              <option value="line">Line</option>
+              <option value="scatter">Scatter</option>
+            </select>
+            <button class="btn ghost small chart-remove" type="button">Remove</button>
+          </div>
+        </div>
+        <div class="chart-config">
+          <div class="row">
+            <label>X</label>
+            <select class="chart-x input"></select>
+          </div>
+          <div class="row chart-y-row">
+            <label>Y</label>
+            <select class="chart-y input"></select>
+          </div>
+          <div class="row chart-extra-row">
+            <label class="chart-extra-label">Bins / Top N</label>
+            <input class="chart-extra input" type="number" min="3" max="50" value="12" />
+          </div>
+          <button class="btn small chart-update" type="button">Update</button>
+        </div>
+        <div class="canvas-wrap">
+          <canvas></canvas>
+        </div>
+      </div>
+    </template>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
+
